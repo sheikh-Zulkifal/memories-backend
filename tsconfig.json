@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",                       // Better for modern JS features like async/await
+    "module": "CommonJS",                    // Good for Node.js
+    "outDir": "./dist",                      // Output compiled files here
+    "rootDir": "./src",                      // Keep all your code inside /src
+    "strict": true,                          // Enables all strict type-checking
+    "esModuleInterop": true,                 // Allows import default from CommonJS
+    "skipLibCheck": true,                    // Speeds up compilation
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["src"],                        // Compile only /src folder
+  "exclude": ["node_modules", "dist"]        // Don't compile these folders
+}
