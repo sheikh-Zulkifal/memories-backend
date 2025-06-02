@@ -51,6 +51,7 @@ export const handleShortURLAccess = async (req: Request, res: Response) => {
 
 export const updateMemory = async (req: Request, res: Response) => {
   try {
+    
     const { id } = req.params;
     const { title, images, password } = req.body;
     const memory = await Memory.findById(id);
@@ -95,6 +96,7 @@ export const updateMemory = async (req: Request, res: Response) => {
 
 export const deleteMemory = async (req: Request, res: Response) => {
   try {
+    console.log("🗑️ DELETE called", req.params.id);
     const { id } = req.params;
     const { password } = req.body;
 
@@ -103,9 +105,17 @@ export const deleteMemory = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Memory not found" });
     }
 
-   const isMached = await bcrypt.compare(password, memory?.passwordHash);
-    if (!isMached) {
-       res.status(401).json({ message: "Invalid password" });
+    if (!password) {
+      return res.status(400).json({ message: "Password is required" });
+    }
+
+    if (!memory.passwordHash) {
+      return res.status(500).json({ message: "Memory has no password set" });
+    }
+
+    const isMatched = await bcrypt.compare(password, memory.passwordHash);
+    if (!isMatched) {
+      return res.status(401).json({ message: "Invalid password" });
     }
 
     // Optional: Delete image files from uploads folder
@@ -118,17 +128,18 @@ export const deleteMemory = async (req: Request, res: Response) => {
 
     // Delete memory and its associated short URL
     await Memory.findByIdAndDelete(id);
-    await ShortURL.findOneAndDelete({ memoryId: id }); 
+    await ShortURL.findOneAndDelete({ memoryId: id });
 
-    res.status(200).json({
+    return res.status(200).json({
       message: "Memory deleted successfully",
       memory,
     });
   } catch (error) {
     console.error("Error deleting memory:", error);
-    res.status(500).json({
+    return res.status(500).json({
       message: "Error deleting memory",
       error: error instanceof Error ? error.message : error,
     });
   }
 };
+
