@@ -4,7 +4,7 @@ import Memory from "../models/Memory";
 const shortid = require("shortid");
 import ShortURL from "../models/ShortURL";
 import fs from "fs";
-
+import { imageDeletionQueue } from "../utils/imageDeletionQueue";
 export const createMemory = async (req: Request, res: Response) => {
   try {
     const { title, images, password } = req.body;
@@ -15,7 +15,12 @@ export const createMemory = async (req: Request, res: Response) => {
     res.status(201).json({
       message: "memort Created",
       shortURL: `http://localhost:3000/${shortCode}`,
-    });
+      memory: {
+        _id: memory._id,
+        title: memory.title,
+        images: memory.images,
+        viewCount: memory.viewCount,}
+    })
  } catch (err: any) {
   console.error("Error while creating memory:", err);
 
@@ -36,7 +41,7 @@ export const handleShortURLAccess = async (req: Request, res: Response) => {
 
     const memory = await Memory.findByIdAndUpdate(
       short.memoryId._id,
-      { since: { viewCount: 1 } },
+      { $inc: { viewCount: 1 } },
       {
         new: true,
       }
@@ -121,9 +126,9 @@ export const deleteMemory = async (req: Request, res: Response) => {
     // Optional: Delete image files from uploads folder
     memory.images.forEach((imagePath) => {
       const fullPath = imagePath.replace(/\\/g, "/");
-      if (fs.existsSync(fullPath)) {
-        fs.unlinkSync(fullPath);
-      }
+      if(fs.existsSync(fullPath))
+        imageDeletionQueue.add(fullPath);
+      
     });
 
     // Delete memory and its associated short URL
