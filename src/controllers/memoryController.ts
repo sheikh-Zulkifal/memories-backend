@@ -35,23 +35,25 @@ export const createMemory = async (req: Request, res: Response) => {
 export const handleShortURLAccess = async (req: Request, res: Response) => {
   try {
     const { shortCode } = req.params;
+
     const short = await ShortURL.findOne({ shortCode }).populate("memoryId");
-    if (!short || !short.memoryId)
-      res.status(404).json({ message: "Memory not found" });
+    if (!short || !short.memoryId) {
+      return res.status(404).json({ message: "Memory not found" });
+    }
 
     const memory = await Memory.findByIdAndUpdate(
       short.memoryId._id,
       { $inc: { viewCount: 1 } },
-      {
-        new: true,
-      }
+      { new: true }
     );
+
     res.json(memory);
   } catch (error) {
-    res.status(500).json({ message: "Error while Retriving Memory", error });
+    res.status(500).json({ message: "Error while Retrieving Memory", error });
   }
 };
-export const getMemoryByShortId = async (req, res) => {
+
+export const getMemoryByShortId = async (req: Request, res: Response) => {
   try {
     const memory = await Memory.findOne({ shortId: req.params.shortId });
     if (!memory) return res.status(404).json({ message: "Memory not found" });
@@ -64,14 +66,36 @@ export const getMemoryByShortId = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-export const getAllMemories = async (req, res) => {
+
+export const getAllMemories = async (req: Request, res: Response) => {
   try {
-    const memories = await Memory.find().select("title shortId");
-    res.json(memories);
-  } catch (err) {
-    res.status(500).json({ message: "Server error" });
+    const shortUrls = await ShortURL.find().populate("memoryId").exec();
+
+    if (!shortUrls) {
+      return res.status(404).json({ message: "No memories found" });
+    }
+
+    const memoriesWithShortCodes = shortUrls.map(({ shortCode, memoryId }) => {
+      if (!memoryId) return null; // safety check if populate failed
+      return {
+        _id: memoryId._id,
+        title: memoryId.title,
+        images: memoryId.images,
+        viewCount: memoryId.viewCount,
+        shortCode,
+      };
+    }).filter(Boolean); // remove nulls if any
+
+    res.status(200).json(memoriesWithShortCodes);
+  } catch (error) {
+    console.error("Error in getAllMemories:", error);
+    res.status(500).json({
+      message: "Error fetching memories",
+      error: error instanceof Error ? error.message : error,
+    });
   }
 };
+
 
 
 // Update
