@@ -51,6 +51,28 @@ export const handleShortURLAccess = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Error while Retriving Memory", error });
   }
 };
+export const getMemoryByShortId = async (req, res) => {
+  try {
+    const memory = await Memory.findOne({ shortId: req.params.shortId });
+    if (!memory) return res.status(404).json({ message: "Memory not found" });
+
+    memory.viewCount++;
+    await memory.save();
+
+    res.json(memory);
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+export const getAllMemories = async (req, res) => {
+  try {
+    const memories = await Memory.find().select("title shortId");
+    res.json(memories);
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 
 // Update
 
