@@ -7,7 +7,8 @@ import fs from "fs";
 import { imageDeletionQueue } from "../utils/imageDeletionQueue";
 export const createMemory = async (req: Request, res: Response) => {
   try {
-    const { title, images, password } = req.body;
+    const { title, password } = req.body;
+    const images = (req.files as Express.Multer.File[]).map(file => file.path);
     const passwordHash = await bcrypt.hash(password, 10);
     const memory = await Memory.create({ title, images, passwordHash });
     const shortCode = shortid.generate();
